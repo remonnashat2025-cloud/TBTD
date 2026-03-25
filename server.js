@@ -1,8 +1,11 @@
+const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
+
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
 
 const app = express();
+
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
@@ -10,7 +13,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'Tbtd@5007';
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
 
-// API endpoint - بيستقبل الأسئلة ويبعتها لـ Anthropic
+// API endpoint
 app.post('/api/ask', async (req, res) => {
   const { messages, systemPrompt } = req.body;
 
@@ -37,11 +40,12 @@ app.post('/api/ask', async (req, res) => {
     const data = await response.json();
     res.json(data);
   } catch (err) {
+    console.error(err);
     res.status(500).json({ error: 'حدث خطأ في الاتصال بـ Anthropic' });
   }
 });
 
-// حفظ وجلب التعليمات في الذاكرة (يتمسح لو السيرفر اتعمله restart)
+// تخزين مؤقت
 let storedData = { instructions: '', pdfTexts: [] };
 
 app.get('/api/instructions', (req, res) => {
@@ -53,11 +57,12 @@ app.post('/api/instructions', (req, res) => {
   res.json({ success: true });
 });
 
-// التحقق من باسوورد المدير
+// تحقق الباسورد
 app.post('/api/verify-password', (req, res) => {
   const { password } = req.body;
   res.json({ success: password === ADMIN_PASSWORD });
 });
 
+// تشغيل السيرفر
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
